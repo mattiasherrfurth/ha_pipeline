@@ -1,0 +1,25 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg
+  namespace: pipeline
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:cloudnative-pg-0.29.1
+  storage:
+    size: 20Gi
+    storageClass: local-path
+  resources:
+    requests: { memory: 1Gi, cpu: 500m }
+    limits:   { memory: 2Gi }
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: m75q
+  bootstrap:
+    initdb:
+      database: pipeline
+      owner: pipeline
+  postgresql:
+    parameters:
+      shared_buffers: "512MB"
+      max_connections: "50"
