@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dbt-build
+spec:
+  schedule: "*/15 * * * *"
+  suspend: true                  # flip to false once the raw tables and models exist
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: cambria
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: dbt
+              #              image: ghcr.io/yourname/ha-dbt:0.1.0
+              image: ghcr.io/mattias/ha-dbt:0.1.0
+              command: ["dbt", "build", "--target", "lab"]
+              env:
+                - { name: DBT_PROFILES_DIR, value: /etc/dbt }
+                - { name: DBT_TARGET_PATH,  value: /tmp/target }
+                - { name: DBT_LOG_PATH,     value: /tmp/logs }
+                - { name: PGHOST,     valueFrom: { secretKeyRef: { name: pg-app, key: host } } }
+                - { name: PGPORT,     valueFrom: { secretKeyRef: { name: pg-app, key: port } } }
+                - { name: PGDATABASE, valueFrom: { secretKeyRef: { name: pg-app, key: dbname } } }
+                - { name: PGUSER,     valueFrom: { secretKeyRef: { name: pg-app, key: username } } }
+                - { name: DBT_ENV_SECRET_PGPASSWORD, valueFrom: { secretKeyRef: { name: pg-app, key: password } } }
+              volumeMounts:
+                - { name: profiles, mountPath: /etc/dbt, readOnly: true }
+                - { name: tmp, mountPath: /tmp }
+              resources:
+                requests: { cpu: 200m, memory: 256Mi }
+                limits:   { memory: 512Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ALL] }
+          volumes:
+            - name: profiles
+              configMap: { name: dbt-profiles }
+            - name: tmp
+              emptyDir: {}
