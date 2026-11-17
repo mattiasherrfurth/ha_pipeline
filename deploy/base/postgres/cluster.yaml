@@ -14,7 +14,7 @@ spec:
     limits:   { memory: 2Gi }
   affinity:
     nodeSelector:
-      kubernetes.io/hostname: m75q
+      kubernetes.io/hostname: cambria
   bootstrap:
     initdb:
       database: pipeline
