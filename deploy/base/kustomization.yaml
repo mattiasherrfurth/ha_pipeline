@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: pipeline
+resources:
+  - postgres/cluster.yaml
+  - processor/deployment.yaml
+  - dbt/cronjob.yaml
+configMapGenerator:
+  - name: processor-config
+    literals:
+      #      - KAFKA_BOOTSTRAP=redpanda.redpanda.svc.cluster.local:9093   # need to adjust one Redpanda is installed
+      #      - SCHEMA_REGISTRY_URL=http://redpanda.redpanda.svc.cluster.local:8081
+      - TOPIC=ha.state_changed.v1
+      - DLQ_TOPIC=ha.state_changed.dlq.v1
+      - CONSUMER_GROUP=ha-processor
+  - name: dbt-profiles
+    files:
+      - profiles.yml=dbt/profiles.yml
