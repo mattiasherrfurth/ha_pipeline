@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: processor }
+  template:
+    metadata:
+      labels: { app: processor }
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: cambria
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: processor
+          #          image: ghcr.io/yourname/ha-processor:0.1.0     # lowercase; replace with your GHCR path
+          envFrom:
+            - configMapRef: { name: processor-config }
+          env:
+            - { name: PGHOST,     valueFrom: { secretKeyRef: { name: pg-app, key: host } } }
+            - { name: PGPORT,     valueFrom: { secretKeyRef: { name: pg-app, key: port } } }
+            - { name: PGDATABASE, valueFrom: { secretKeyRef: { name: pg-app, key: dbname } } }
+            - { name: PGUSER,     valueFrom: { secretKeyRef: { name: pg-app, key: username } } }
+            - { name: PGPASSWORD, valueFrom: { secretKeyRef: { name: pg-app, key: password } } }
+          ports:
+            - { name: metrics, containerPort: 8080 }
+          readinessProbe: { httpGet: { path: /healthz, port: metrics } }
+          livenessProbe:  { httpGet: { path: /healthz, port: metrics }, initialDelaySeconds: 15 }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
