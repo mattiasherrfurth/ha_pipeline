@@ -1,0 +1,12 @@
+pipeline:
+  target: lab
+  outputs:
+    lab:
+      type: postgres
+      host: "{{ env_var('PGHOST') }}"
+      port: "{{ env_var('PGPORT') | as_number }}"
+      user: "{{ env_var('PGUSER') }}"
+      password: "{{ env_var('DBT_ENV_SECRET_PGPASSWORD') }}"
+      dbname: "{{ env_var('PGDATABASE') }}"
+      schema: staging
+      threads: 2
