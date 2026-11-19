@@ -1,0 +1,17 @@
+# secrets and local config
+*.kubeconfig
+kubeconfig*
+.env
+*.pem
+*.key
+# python
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
